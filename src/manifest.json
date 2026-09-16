@@ -14,10 +14,12 @@
 	"version": "2.6.0",
 
 #if is_firefox
-	// Needed for Firefox on Android, same as the previous jetpack id
-	"applications": {
+	// This fork has its own add-on id: Mozilla only signs an id for the account that
+	// owns it, and the original one (jid1-HdwPLukcGQeOSh@jetpack) belongs to the
+	// upstream author's AMO listing.
+	"browser_specific_settings": {
 		"gecko": {
-			"id": "jid1-HdwPLukcGQeOSh@jetpack"
+			"id": "location-guard@glichten.github.io"
 		}
 	},
 #endif

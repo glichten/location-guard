@@ -21,6 +21,16 @@ make package-firefox      # build/location-guard-firefox-<version>.xpi (needs zi
 npm test                  # unit tests (node --test)
 ```
 
+Release Firefox only keeps signed extensions, so for a permanent install get
+the build signed by Mozilla as a self-distributed add-on: create API
+credentials at <https://addons.mozilla.org/developers/addon/api/key/>, put
+them in `~/.web-ext-config.mjs` as
+`export default { sign: { apiKey: '...', apiSecret: '...' } };`
+and run `make sign-firefox`. The signed `.xpi` lands in `build/signed/` and
+installs by opening it in Firefox. This fork has its own add-on id, so it
+installs next to the original store version rather than replacing it; remove
+that one first.
+
 `make build-chrome`, `build-edge` and `build-opera` produce the other variants
 (the manifest is still version 2, which current Chrome and Edge no longer load).
 `test/e2e/` has a smoke test that drives a real Firefox against the live

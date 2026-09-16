@@ -36,7 +36,7 @@ import urllib.error
 import urllib.request
 import zipfile
 
-ADDON_ID = 'jid1-HdwPLukcGQeOSh@jetpack'          # gecko id from src/manifest.json
+ADDON_ID = 'location-guard@glichten.github.io'   # gecko id from src/manifest.json
 ADDON_UUID = '0c2c8085-650c-4ea8-88e7-3b0dc6d7a3d1'  # pre-seeded so we know the moz-extension:// URL
 ELEMENT_KEY = 'element-6066-11e4-a52e-4f735466cecf'
 ENTER = '\ue007'   # WebDriver key code for Enter

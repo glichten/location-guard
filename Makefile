@@ -15,6 +15,8 @@ default:
 	@echo "\npackaging:"
 	@echo make package-chrome
 	@echo make package-firefox
+	@echo "\nsigning (needs AMO API credentials, see README):"
+	@echo make sign-firefox
 	@echo "\ntesting:"
 	@echo make [CHROME=/path/to/google-chrome] test-chrome
 	@echo make [FIREFOX=/path/to/firefox] test-firefox
@@ -86,6 +88,14 @@ build/location-guard-%-$(VER).zip: build/%
 build/location-guard-%-$(VER).xpi: build/location-guard-%-$(VER).zip
 	mv $< $@
 
+
+# sign #################################################################
+
+# Release Firefox only keeps signed extensions. Mozilla signs self-distributed
+# ("unlisted") add-ons through its API; web-ext takes the credentials from
+# ~/.web-ext-config.mjs or from WEB_EXT_API_KEY / WEB_EXT_API_SECRET.
+sign-firefox: build/firefox
+	npx web-ext sign --channel unlisted --source-dir build/firefox --artifacts-dir build/signed
 
 # test #################################################################
 
