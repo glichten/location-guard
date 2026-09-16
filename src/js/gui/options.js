@@ -494,7 +494,7 @@ $(document).ready(function() {
 		location.href = "faq.html#" + $(e.target).attr("faq");
 	});
 	$(".reportIssue").click(function(e) {
-		window.open('https://github.com/chatziko/location-guard/issues', '_blank');
+		window.open('https://github.com/glichten/location-guard/issues', '_blank');
 	});
 
 	$(document).on("click", "#levelMapCurrentPos", showCurrentPosition);	// this doesn't exist yet (it's inside the popup), so we set in document

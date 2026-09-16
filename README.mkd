@@ -1,13 +1,28 @@
-# Location Guard
+# Location Guard Revived
 
-**Location Guard** is a browser extension that allows to protect your location
-while using location-aware websites, by adding controlled noise to it.
-It supports the followng browsers:
+**Location Guard** is a browser extension that protects your location while
+using location-aware websites, by adding controlled noise to it, or by reporting
+a fixed location of your choice.
 
-* Google Chrome / Chromium ([install](https://chrome.google.com/webstore/detail/location-guard/cfohepagpmnodfdmjliccbbigdkfcgia))
-* Mozilla Firefox ([install](https://addons.mozilla.org/firefox/addon/location-guard/))
-* Microsoft Edge ([install](https://microsoftedge.microsoft.com/addons/detail/location-guard/hbgdpjpeeodeojjbeenfnpnldhahleoo))
-* Opera ([install](https://chrome.google.com/webstore/detail/location-guard/cfohepagpmnodfdmjliccbbigdkfcgia))
+This is a maintained fork of the original [Location
+Guard](https://github.com/chatziko/location-guard) by Kostas Chatzikokolakis,
+which has not been updated since 2022 and whose map and location search stopped
+working. The fork keeps the original's design and privacy model and fixes what
+broke:
+
+* map tiles load again (OpenStreetMap now requires an identifying `Referer`,
+  which Firefox never sends from extension pages);
+* location search works again, using OpenStreetMap's Nominatim instead of a
+  third-party geocoder whose shared API key ran out of quota years ago;
+* the map attribution and privacy FAQ are accurate.
+
+Install:
+
+* Mozilla Firefox: [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/location-guard-revived/)
+  (listing under review), or download the signed `.xpi` from the
+  [releases page](https://github.com/glichten/location-guard/releases) and open it in Firefox.
+* Google Chrome / Microsoft Edge: not yet. The extension still uses Manifest V2,
+  which those browsers no longer load; a Manifest V3 version is planned.
 
 Location Guard is available under either the [MIT/X11](https://opensource.org/licenses/mit-license.php)
 or the [CeCILL-B](http://www.cecill.info/licences.fr.html) license.
@@ -143,9 +158,15 @@ Location Guard takes your privacy seriously! First, the extension itself has no
 "special permission" to access your location, it can obtain it only when a
 website asks for it and only if you allow access in the permission dialog.
 
-Location Guard runs locally in your browser and _sends no information_
-whatsoever to the network. It only communicates your fake location to the
-website that asks for it.
+Location Guard's protection runs locally in your browser and _sends no
+information_ about you to the network. It only communicates your fake location
+to the website that asks for it. The one exception is the maps in the
+extension's options: showing a map fetches map tiles for the area on screen
+from [OpenStreetMap](https://www.openstreetmap.org/), and the search box sends
+the text you type to OpenStreetMap's [Nominatim](https://nominatim.org/)
+service. Those requests are covered by the [OpenStreetMap privacy
+policy](https://osmfoundation.org/wiki/Privacy_Policy). Nothing is ever sent to
+the developers of Location Guard.
 
 Location Guard also never stores your real location. The _fake_ location is
 cached for a small period of time; if a website asks for your location during

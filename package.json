@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/chatziko/location-guard.git"
+    "url": "https://github.com/glichten/location-guard.git"
   },
   "author": "Kostas Chatzikokolakis",
   "license": "MIT/X11",
   "bugs": {
-    "url": "https://github.com/chatziko/location-guard/issues"
+    "url": "https://github.com/glichten/location-guard/issues"
   },
-  "homepage": "https://github.com/chatziko/location-guard#readme",
+  "homepage": "https://github.com/glichten/location-guard#readme",
   "dependencies": {
     "browserify": "^17.0.0",
     "intro.js": "^2.9.3",
@@ -26,5 +26,8 @@
     "leaflet-control-geocoder": "^4.0.0",
     "leaflet.locatecontrol": "^0.67.0",
     "sglide": "^2.1.1"
-  }
+  },
+  "contributors": [
+    "Gabe Lichten"
+  ]
 }

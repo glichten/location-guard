@@ -261,7 +261,7 @@ Browser.gui.refreshAllIcons = async function() {
 };
 
 Browser.gui.showPage = function(name) {
-	browser.tabs.create({ url: browser.extension.getURL(name) });
+	browser.tabs.create({ url: browser.runtime.getURL(name) });
 };
 
 Browser.gui.getCallUrl = async function(tabId) {

@@ -8,7 +8,7 @@
 // but only to requests made by the extension's own pages: websites the user visits that
 // embed OSM maps keep whatever Referer they send themselves.
 
-const REFERER = 'https://github.com/chatziko/location-guard';
+const REFERER = 'https://github.com/glichten/location-guard';
 
 const URL_PATTERNS = [
 	'*://*.tile.openstreetmap.org/*',

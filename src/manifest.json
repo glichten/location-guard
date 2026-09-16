@@ -2,16 +2,17 @@
 // preprocessor during build. One of the following is always defined:
 //   is_chrome, is_firefox, is_opera, is_edge
 {
-	"name": "Location Guard",
+	"name": "Location Guard Revived",
 	"description": "Hide your geographic location from websites.",
-	"author": "Kostas Chatzikokolakis",
+	"author": "Gabe Lichten",
+	"homepage_url": "https://github.com/glichten/location-guard",
 	"icons": {
 		"16": "images/pin_16.png",
 		"32": "images/pin_32.png",
 		"64": "images/pin_64.png",
 		"128": "images/pin_128.png"
 	},
-	"version": "2.6.0",
+	"version": "2.7.0",
 
 #if is_firefox
 	// This fork has its own add-on id: Mozilla only signs an id for the account that
@@ -19,7 +20,11 @@
 	// upstream author's AMO listing.
 	"browser_specific_settings": {
 		"gecko": {
-			"id": "location-guard@glichten.github.io"
+			"id": "location-guard@glichten.github.io",
+			// The extension sends nothing to its developers. The only network activity is
+			// the options page map: tiles and search queries go to OpenStreetMap when the
+			// user opens that page (see faq.html and docs/amo-listing.md).
+			"data_collection_permissions": { "required": ["none"] }
 		}
 	},
 #endif
@@ -57,7 +62,7 @@
 			"64": "images/pin_64.png"
 		},
 		"default_popup": "popup.html",
-		"default_title": "Location Guard"
+		"default_title": "Location Guard Revived"
 	},
 
 	"content_scripts": [{
