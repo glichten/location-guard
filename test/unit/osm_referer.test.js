@@ -6,7 +6,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { refererHeaders, install, REFERER, URL_PATTERNS } = require('../../src/js/osm_referer');
+const { refererHeaders, install, dnrRule, REFERER, URL_PATTERNS, OSM_HOSTS, RULE_ID } = require('../../src/js/osm_referer');
 
 const EXT_ORIGIN = 'moz-extension://0c2c8085-650c-4ea8-88e7-3b0dc6d7a3d1';
 
@@ -78,16 +78,112 @@ test('URL_PATTERNS cover the OSM tile servers and Nominatim, and nothing else', 
 	]);
 });
 
-test('install() registers one blocking request-header listener for the OSM hosts', () => {
+// --- helpers for a fake browser API ------------------------------------------------------
+
+function listeners() {
+	const fns = [];
+	return { addListener: fn => fns.push(fn), fire: (...args) => fns.map(fn => fn(...args)), fns };
+}
+
+function fakeBrowser({ webRequest = false, dnrResult = Promise.resolve() } = {}) {
 	const calls = [];
-	const webRequest = { onBeforeSendHeaders: { addListener: (fn, filter, extra) => calls.push({ fn, filter, extra }) } };
-	install(webRequest, EXT_ORIGIN + '/');		// runtime.getURL('') gives a trailing slash
-	assert.equal(calls.length, 1);
-	assert.deepEqual(calls[0].filter, { urls: URL_PATTERNS });
-	assert.deepEqual(calls[0].extra, ['blocking', 'requestHeaders']);
+	const api = {
+		calls,
+		runtime: {
+			id: 'oofmknpjjmooccmkmahaghakbfbclgkk',
+			getURL: p => EXT_ORIGIN + '/' + p,
+			onInstalled: listeners(),
+			onStartup: listeners(),
+		},
+		declarativeNetRequest: {
+			updateDynamicRules: arg => { calls.push(arg); return dnrResult; },
+		},
+	};
+	if(webRequest)
+		api.webRequest = { onBeforeSendHeaders: listeners() };
+	return api;
+}
 
-	const rewritten = calls[0].fn(tileRequest({ originUrl: EXT_ORIGIN + '/options.html' }));
+const tick = () => new Promise(resolve => setImmediate(resolve));
+
+// --- the two strategies -------------------------------------------------------------------
+
+test('OSM_HOSTS is the single source for URL_PATTERNS', () => {
+	assert.deepEqual(OSM_HOSTS, ['tile.openstreetmap.org', 'tile.openstreetmap.de', 'nominatim.openstreetmap.org']);
+	assert.deepEqual(URL_PATTERNS, OSM_HOSTS.map(h => h.startsWith('tile.') ? '*://*.' + h + '/*' : '*://' + h + '/*'));
+});
+
+test('dnrRule() sets exactly one Referer on OSM requests made by the given extension', () => {
+	const rule = dnrRule('oofmknpjjmooccmkmahaghakbfbclgkk');
+	assert.deepEqual(rule, {
+		id: RULE_ID,
+		priority: 1,
+		action: { type: 'modifyHeaders', requestHeaders: [{ header: 'Referer', operation: 'set', value: REFERER }] },
+		condition: {
+			requestDomains: OSM_HOSTS,
+			initiatorDomains: ['oofmknpjjmooccmkmahaghakbfbclgkk'],
+			resourceTypes: ['image', 'xmlhttprequest', 'other'],
+		},
+	});
+});
+
+test('install() with blocking webRequest (Firefox) registers the header listener and resolves at once', async () => {
+	const api = fakeBrowser({ webRequest: true });
+	const how = await install(api);
+	assert.equal(how, 'webRequest');
+	assert.equal(api.webRequest.onBeforeSendHeaders.fns.length, 1);
+	assert.equal(api.calls.length, 0, 'no declarativeNetRequest call');
+	assert.equal(api.runtime.onInstalled.fns.length, 0);
+
+	// the registered listener behaves like refererHeaders()
+	const fn = api.webRequest.onBeforeSendHeaders.fns[0];
+	const rewritten = fn(tileRequest({ originUrl: EXT_ORIGIN + '/options.html' }));
 	assert.deepEqual(header(rewritten.requestHeaders, 'Referer'), [{ name: 'Referer', value: REFERER }]);
+	assert.deepEqual(fn(tileRequest({ originUrl: 'https://www.example.com/' })), {});
+});
 
-	assert.deepEqual(calls[0].fn(tileRequest({ originUrl: 'https://www.example.com/' })), {});
+test('install() without webRequest (Chromium) registers the DNR rule on install and on startup', async () => {
+	const api = fakeBrowser();
+	let settled = null;
+	install(api).then(how => { settled = how; });
+	await tick();
+	assert.equal(settled, null, 'nothing is in place until an install/startup event');
+	assert.equal(api.calls.length, 0);
+
+	api.runtime.onInstalled.fire({ reason: 'install' });
+	await tick();
+	assert.equal(settled, 'declarativeNetRequest');
+	assert.deepEqual(api.calls, [{ removeRuleIds: [RULE_ID], addRules: [dnrRule(api.runtime.id)] }]);
+
+	api.runtime.onStartup.fire();
+	await tick();
+	assert.equal(api.calls.length, 2, 'startup re-applies the same rule (idempotent)');
+});
+
+test('install() reports a rejected updateDynamicRules and resolves null instead of throwing', async () => {
+	const api = fakeBrowser({ dnrResult: Promise.reject(new Error('nope')) });
+	const warnings = [];
+	const origWarn = console.warn;
+	console.warn = (...args) => warnings.push(args);
+	try {
+		const p = install(api);
+		api.runtime.onInstalled.fire({ reason: 'install' });
+		assert.equal(await p, null);
+	} finally {
+		console.warn = origWarn;
+	}
+	assert.equal(warnings.length, 1);
+	assert.match(String(warnings[0][0]), /Referer/);
+});
+
+test('install() with neither API resolves null and warns', async () => {
+	const warnings = [];
+	const origWarn = console.warn;
+	console.warn = (...args) => warnings.push(args);
+	try {
+		assert.equal(await install({ runtime: { id: 'x', onInstalled: listeners(), onStartup: listeners() } }), null);
+	} finally {
+		console.warn = origWarn;
+	}
+	assert.equal(warnings.length, 1);
 });
