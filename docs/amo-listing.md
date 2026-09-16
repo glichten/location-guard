@@ -7,14 +7,17 @@ Paste the sections into the corresponding fields on
 ## Submission steps
 
 1. `make build-firefox` and `make package-firefox` (or zip `build/firefox`
-   with Python, see README). Upload `build/location-guard-firefox-2.7.0.xpi`.
+   with Python, see README). Upload `build/location-guard-firefox-2.7.1.xpi`.
    The version must be new: Mozilla will not accept a version string that
    was already signed, listed or unlisted.
 2. In the developer hub, open the add-on (it already exists from the unlisted
-   2.6.0 signing), choose **Upload New Version**, and pick **On this site**
-   for distribution.
+   signings), choose **Upload New Version**, and pick **On this site**
+   for distribution. Picking **On your own** instead signs the file for
+   self-distribution within minutes and creates no listing at all; that is
+   what happened to 2.7.0, which is why the listed submission is 2.7.1.
+   `make amo-status` shows which channel each version went to.
 3. When asked for source code, answer **yes** and upload the archive produced
-   by `git archive --format=zip -o build/location-guard-2.7.0-source.zip v2.7.0`.
+   by `git archive --format=zip -o build/location-guard-2.7.1-source.zip v2.7.1`.
    The extension ships browserify bundles, so reviewers rebuild it from source.
 4. Fill in the listing fields below, add two or three screenshots of the
    options page (Privacy Levels map, Fixed Location map with a search result),

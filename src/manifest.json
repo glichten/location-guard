@@ -12,7 +12,7 @@
 		"64": "images/pin_64.png",
 		"128": "images/pin_128.png"
 	},
-	"version": "2.7.0",
+	"version": "2.7.1",
 
 #if is_firefox
 	// This fork has its own add-on id: Mozilla only signs an id for the account that

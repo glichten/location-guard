@@ -44,7 +44,8 @@ them in `~/.web-ext-config.mjs` as
 and run `make sign-firefox`. The signed `.xpi` lands in `build/signed/` and
 installs by opening it in Firefox. This fork has its own add-on id, so it
 installs next to the original store version rather than replacing it; remove
-that one first.
+that one first. `make amo-status` shows the review status of every uploaded
+version.
 
 `make build-chrome`, `build-edge` and `build-opera` produce the other variants
 (the manifest is still version 2, which current Chrome and Edge no longer load).

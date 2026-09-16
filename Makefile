@@ -97,6 +97,10 @@ build/location-guard-%-$(VER).xpi: build/location-guard-%-$(VER).zip
 sign-firefox: build/firefox
 	npx web-ext sign --channel unlisted --source-dir build/firefox --artifacts-dir build/signed
 
+# review status of the versions on addons.mozilla.org (same credentials as sign-firefox)
+amo-status:
+	python3 scripts/amo_status.py
+
 # test #################################################################
 
 test-chrome: build/chrome
