@@ -341,6 +341,52 @@ def test_search_by_name_recenters_privacy_level_map(d):
     wait_for(lambda: map_shows(d, map_id, SYDNEY_OPERA), 20, 'privacy level map to move to the Sydney Opera House')
 
 
+def near_list(got, expected, tol_deg=1e-6):
+    return isinstance(got, list) and len(got) == 2 and isinstance(expected, dict) \
+        and abs(got[0] - expected['latitude']) < tol_deg and abs(got[1] - expected['longitude']) < tol_deg
+
+
+def _website_receives_fixed_location(d, url):
+    set_default_level(d, 'fixed')
+    expected = storage_get(d, 'fixedPos')
+    got = website_geolocation(d, url)
+    assert near_list(got, expected), 'page at %s got %r, fixed location is %r' % (url, got, expected)
+
+
+def test_website_receives_fixed_location(d):
+    """A website asking for the location gets the fixed location: the page-world replacement,
+    the page/content message channel, storage and the content script all work."""
+    _website_receives_fixed_location(d, 'https://example.com/')
+
+
+def test_csp_strict_website_receives_fixed_location(d):
+    """Same on a page whose Content-Security-Policy forbids inline scripts (github.com), the
+    case the old inline <script> injection could not handle."""
+    _website_receives_fixed_location(d, 'https://github.com/')
+
+
+def test_badge_counts_website_call(d):
+    """After a website called geolocation, that tab's toolbar badge shows the call count. This
+    is the only path that needs the background script: content script -> worker -> action.
+    Chromium only (Firefox uses a page action, which has no badge)."""
+    set_default_level(d, 'fixed')
+    options_tab = d.current_handle()
+    website_geolocation(d, 'https://example.com/', new_tab=True)   # a new tab: navigating the
+    d.switch_to(options_tab)                                        # website tab away would reset its badge
+    show_page(d, 'options')
+    badges = wait_for(lambda: (lambda b: b if '1' in b else None)(d.execute_async(
+        'var cb = arguments[arguments.length - 1];'
+        'chrome.tabs.query({}, tabs => Promise.all(tabs.map(t => chrome.action.getBadgeText({ tabId: t.id }))).then(cb, e => cb(["error: " + e])));')),
+        15, 'a tab badge showing 1')
+    assert badges.count('1') == 1, badges
+
+
+TESTS_WEBSITE = [
+    test_website_receives_fixed_location,
+    test_csp_strict_website_receives_fixed_location,
+]
+
+
 TESTS_OPTIONS = [
     test_fixed_location_tiles_load,
     test_privacy_level_tiles_load,

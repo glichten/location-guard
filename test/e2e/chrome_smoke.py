@@ -24,8 +24,8 @@ import tempfile
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from smoke_common import (WebDriver, TESTS_OPTIONS, alive, copy_ext_dir, free_port,  # noqa: E402
-                          run_tests, wait_for)
+from smoke_common import (WebDriver, TESTS_OPTIONS, TESTS_WEBSITE, alive, copy_ext_dir,  # noqa: E402
+                          free_port, run_tests, test_badge_counts_website_call, wait_for)
 
 EXT_ID = 'oofmknpjjmooccmkmahaghakbfbclgkk'   # pinned by the "key" in src/manifest.json
 
@@ -58,7 +58,7 @@ def main():
         d.new_session({'browserName': 'chrome', 'goog:chromeOptions': opts})
         d.set_timeouts(script=60000, pageLoad=60000)
         time.sleep(2)   # let onInstalled run: it registers the OSM Referer rule and opens the demo tab
-        failures = run_tests(d, TESTS_OPTIONS, args.only, args.screenshots)
+        failures = run_tests(d, TESTS_OPTIONS + TESTS_WEBSITE + [test_badge_counts_website_call], args.only, args.screenshots)
     finally:
         try:
             d.quit()

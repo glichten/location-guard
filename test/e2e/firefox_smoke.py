@@ -8,6 +8,7 @@ add-on, opens its options page and runs the checks in smoke_common.py:
   * searching a place name on the Fixed Location map sets the fixed location
   * typing "lat, lon" on the Fixed Location map sets the fixed location
   * searching a place name on the Privacy Levels map recenters that map
+  * a website's navigator.geolocation gets the fixed location, also on a strict-CSP page
 
 Usage:
 
@@ -29,17 +30,20 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from smoke_common import (WebDriver, TESTS_OPTIONS, alive, free_port, package_xpi,  # noqa: E402
-                          run_tests, wait_for)
+from smoke_common import (WebDriver, TESTS_OPTIONS, TESTS_WEBSITE, alive, free_port,  # noqa: E402
+                          package_xpi, run_tests, wait_for)
 
 ADDON_ID = 'location-guard@glichten.github.io'   # gecko id from src/manifest.json
 ADDON_UUID = '0c2c8085-650c-4ea8-88e7-3b0dc6d7a3d1'  # pre-seeded so we know the moz-extension:// URL
 
 
 class FirefoxDriver(WebDriver):
-    # Marionette scripts see page objects through Xray wrappers, which hide the extension's
-    # replacement of navigator.geolocation; waive them to reach the page's own object.
-    geolocation_prefix = 'var geo = window.wrappedJSObject.navigator.geolocation;'
+    # Depending on the Firefox version, Marionette either runs scripts in a sandbox that sees
+    # page objects through Xray wrappers -- which hide the extension's replacement of
+    # navigator.geolocation, so the wrappers have to be waived -- or directly against the
+    # page's own window, where `wrappedJSObject` does not exist. Handle both.
+    geolocation_prefix = ('var win = window.wrappedJSObject || window;'
+                          'var geo = win.navigator.geolocation;')
 
     def set_context(self, ctx):
         self._s('POST', '/moz/context', {'context': ctx})
@@ -95,7 +99,11 @@ def main():
         wait_for(lambda: alive(d), 15, 'geckodriver to start')
         ff = {'prefs': {
             'extensions.webextensions.uuids': json.dumps({ADDON_ID: ADDON_UUID}),
-            'geo.enabled': False,               # keep the locate control from prompting
+            # Deny geolocation instead of switching it off: geo.enabled=false removes
+            # navigator.geolocation altogether, and then the extension has nothing to replace,
+            # so a website could never receive the fixed location. Denying keeps the object
+            # there and still stops the maps' locate control from prompting.
+            'permissions.default.geo': 2,
         }, 'args': []}
         if args.firefox:
             ff['binary'] = args.firefox
@@ -106,7 +114,7 @@ def main():
         addon = d.install_addon(xpi, temporary=True)
         assert addon == ADDON_ID, 'unexpected add-on id %r' % addon
         time.sleep(1)   # let the background page start
-        failures = run_tests(d, TESTS_OPTIONS, args.only, args.screenshots)
+        failures = run_tests(d, TESTS_OPTIONS + TESTS_WEBSITE, args.only, args.screenshots)
     finally:
         try:
             d.quit()
