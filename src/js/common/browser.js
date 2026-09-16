@@ -304,7 +304,7 @@ Browser.gui.mapTiles = function() {
 		url: Browser.capabilities.isBrave()
 			? 'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png'
 			: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-		info: { attribution: 'Map data © OpenStreetMap contributors' }
+		info: { attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }
 	};
 }
 

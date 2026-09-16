@@ -5,8 +5,12 @@
 
 const Browser = require('./common/browser');
 const Util = require('./common/util');
+const OsmReferer = require('./osm_referer');
 
 Browser.log('starting');
+
+// identify the extension's own map/geocoder requests to OpenStreetMap (see osm_referer.js)
+OsmReferer.install(browser.webRequest, browser.runtime.getURL(''));
 
 Util.events.addListener('browser.install', function() {
 	// show demo on first install

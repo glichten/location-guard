@@ -4,14 +4,12 @@ require('sglide');		// extends jquery
 
 // Requiring the plugins extends Leaflet automatically
 const L = require('leaflet');
-require('pelias-leaflet-plugin');
 require('leaflet.locatecontrol');
+// leaflet-control-geocoder is appended to common-gui.js by the Makefile (see load-globals.js)
+// and has already registered L.Control.Geocoder on this L
 
 const Browser = require('../common/browser');
 const PlanarLaplace = require('../common/laplace');
-
-const geocoderKey = '5b3ce3597851110001cf6248dc55f0492abe4923aa33f4ca1722acb8';
-const geocoderUrl = 'https://api.openrouteservice.org/geocode';
 
 var levelMap, fixedPosMap;
 var epsilon;
@@ -109,6 +107,21 @@ async function saveLevel() {
 	await Browser.storage.set(st);
 }
 
+// Search box for the maps. Place names are looked up with Nominatim, OpenStreetMap's own
+// geocoder (no API key; the main script adds the Referer its usage policy asks for, see
+// osm_referer.js). Only the typed text is sent, never the map position. Text that already
+// is a "lat, lon" pair is used directly without contacting the server.
+function geocoderControl() {
+	return new L.Control.Geocoder({
+		geocoder: L.Control.Geocoder.latLng({ next: L.Control.Geocoder.nominatim() }),
+		defaultMarkGeocode: false,		// the 'markgeocode' handlers below decide what to do
+		expand: 'click',				// the default 'touch' mode expands on mousedown, and in Firefox the
+										// focus change that follows collapses the box again before mouseup
+		placeholder: 'Search place or "lat, lon"',
+		errorMessage: 'Nothing found',
+	});
+}
+
 function initLevelMap() {
 	var latlng = [currentPos.latitude, currentPos.longitude];
 
@@ -185,13 +198,13 @@ function initLevelMap() {
 
 	// geocoder control
 	if(!Browser.capabilities.isAndroid()) // not enough space on smartphones, better have a cleaner interface
-		L.control.geocoder(geocoderKey, {
-        	url: geocoderUrl,
-			markers: false,
-			autocomplete: false
-		}).on('highlight', handleChangePosEvent)
-		  .on('select',    handleChangePosEvent)
-		  .addTo(levelMap);
+		geocoderControl()
+			.on('markgeocode', function(e) {
+				handleChangePosEvent({ latlng: e.geocode.center });
+				levelMap.setView(e.geocode.center);
+			})
+			.addTo(levelMap);
+	levelMap.attributionControl.addAttribution('Search by <a href="https://nominatim.org">Nominatim</a>');
 }
 
 async function initFixedPosMap() {
@@ -249,23 +262,16 @@ async function initFixedPosMap() {
 		iconLoading: 'icon-trans ui-btn-icon-notext ui-icon-location',		// font awesome
 	}).addTo(fixedPosMap);
 
-	// geocoder control
+	// geocoder control: a search result becomes the new fixed location
 	if(!Browser.capabilities.isAndroid()) // not enough space on smartphones, better have a cleaner interface
-		L.control.geocoder(geocoderKey, {
-			url: geocoderUrl,
-			markers: false,
-			autocomplete: false
-		}).on('results', function(e) {
-			// directly set position if the text is a latlon
-			var res = e.params.text.match(/^([-+]?[0-9]+\.[0-9]+)\s*,?\s*([-+]?[0-9]+\.[0-9]+)$/);
-			if(!res) return;
-
-			var latlng = L.latLng(parseFloat(res[1]), parseFloat(res[2]));
-			saveFixedPos(latlng);
-			fixedPosMap.setView(latlng, 14)
-			this.collapse();		// close the geocoder search
-
-		}).addTo(fixedPosMap);
+		geocoderControl()
+			.on('markgeocode', function(e) {
+				fixedPosMap.closePopup();
+				saveFixedPos(e.geocode.center);
+				fixedPosMap.fitBounds(e.geocode.bbox, { maxZoom: 16 });
+			})
+			.addTo(fixedPosMap);
+	fixedPosMap.attributionControl.addAttribution('Search by <a href="https://nominatim.org">Nominatim</a>');
 }
 
 async function saveFixedPos(latlng) {

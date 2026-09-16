@@ -12,6 +12,25 @@ It supports the followng browsers:
 Location Guard is available under either the [MIT/X11](https://opensource.org/licenses/mit-license.php)
 or the [CeCILL-B](http://www.cecill.info/licences.fr.html) license.
 
+## Building and testing
+
+```sh
+npm ci
+make build-firefox        # unpacked extension in build/firefox
+make package-firefox      # build/location-guard-firefox-<version>.xpi (needs zip)
+npm test                  # unit tests (node --test)
+```
+
+`make build-chrome`, `build-edge` and `build-opera` produce the other variants
+(the manifest is still version 2, which current Chrome and Edge no longer load).
+`test/e2e/` has a smoke test that drives a real Firefox against the live
+OpenStreetMap servers; see [test/e2e/README.md](test/e2e/README.md).
+
+The maps in the options page use OpenStreetMap tiles and its Nominatim
+geocoder. Their usage policies require an identifying `Referer`, which Firefox
+never sends from extension pages, so the extension adds one to its own OSM
+requests only (`webRequest` permission, see `src/js/osm_referer.js`).
+
 ## Frequently Asked Questions
 
 ### What is Location Guard?

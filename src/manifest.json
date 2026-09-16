@@ -11,7 +11,7 @@
 		"64": "images/pin_64.png",
 		"128": "images/pin_128.png"
 	},
-	"version": "2.5.0",
+	"version": "2.6.0",
 
 #if is_firefox
 	// Needed for Firefox on Android, same as the previous jetpack id
@@ -22,7 +22,8 @@
 	},
 #endif
 
-	"permissions": ["http://*/*", "https://*/*", "storage"],
+	// webRequest/webRequestBlocking: add a Referer to our own OpenStreetMap requests, see js/osm_referer.js
+	"permissions": ["http://*/*", "https://*/*", "storage", "webRequest", "webRequestBlocking"],
 	"manifest_version": 2,
 
 	"background": {
