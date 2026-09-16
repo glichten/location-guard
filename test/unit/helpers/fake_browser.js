@@ -92,7 +92,7 @@ function loadFresh(fake, modulePath) {
 	const marker = path.sep + 'src' + path.sep + 'js' + path.sep;
 	for(const k of Object.keys(require.cache))
 		if(k.includes(marker)) delete require.cache[k];
-	globalThis.browser = fake;
+	delete globalThis.browser;
 	globalThis.chrome = fake;
 	const base = require('../../../src/js/common/browser_base');
 	base.debugging = false;			// keep Browser.log quiet in test output
