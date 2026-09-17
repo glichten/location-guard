@@ -5,6 +5,7 @@
 //
 const Browser = require('./browser_base');
 const Util = require('./util');
+const ManifestCaps = require('./manifest_caps');
 
 Browser.init = function(script) {
 	Browser._script = script;
@@ -50,7 +51,13 @@ Browser._main_script = function() {
 	// - the icon _is_ hidden on history.pushstate (eg on google maps when
 	//   clicking on some label) although the same page remains loaded
 	//
-	if(!Browser.capabilities.needsPAManualHide()) {
+	// NOTE: needsPAManualHide() is true only on Firefox, so this condition has always selected
+	// the other builds and the workaround never ran where it was meant to; that is left as it
+	// is. Builds with a permanent (browser/action) icon have no page action at all, so for them
+	// the listener could never act (iconShown is only set by the page-action path) and would
+	// only wake the Manifest V3 service worker on every tab change. Skip it there.
+	//
+	if(!Browser.capabilities.needsPAManualHide() && !Browser.capabilities.permanentIcon()) {
 		Browser.gui.iconShown = {};
 
 		browser.tabs.onUpdated.addListener(function(tabId, info) {
@@ -67,9 +74,21 @@ Browser._main_script = function() {
 		});
 	}
 
-	// set default icon (for browser action)
+	// set the icons
 	//
-	Browser.gui.refreshAllIcons();
+	if(Browser.capabilities.hasPersistentBackground()) {
+		// the background page starts once per browser session: refresh everything
+		Browser.gui.refreshAllIcons();
+	} else {
+		// A Manifest V3 service worker starts many times per session, so on every start refresh
+		// only the default icon (one storage read, no messaging). This also covers disable/enable,
+		// after which Chromium rebuilds the action from the manifest defaults and no event fires.
+		// Per-tab icon state is kept by the browser while a tab lives, so all tabs are refreshed
+		// only on install/update and on browser startup.
+		Browser.gui.refreshIcon(null);
+		browser.runtime.onInstalled.addListener(function() { Browser.gui.refreshAllIcons(); });
+		browser.runtime.onStartup.addListener(function() { Browser.gui.refreshAllIcons(); });
+	}
 }
 
 
@@ -114,10 +133,19 @@ Browser.rpc._listener = function(message, sender, replyHandler) {
 Browser.rpc.call = async function(tabId, name, args) {
 	return new Promise(resolve => {
 		var message = { method: name, args: args };
+		function done(res) {
+			// A missing receiver (eg. a tab with no content script) is normal here, not an error;
+			// reading lastError also keeps the browser from logging it as unchecked.
+			if(browser.runtime.lastError) {
+				Browser.log('RPC: no reply', browser.runtime.lastError.message);
+				resolve(null);
+			} else
+				resolve(res);
+		}
 		if(tabId)
-			browser.tabs.sendMessage(tabId, message, resolve);
+			browser.tabs.sendMessage(tabId, message, done);
 		else
-			browser.runtime.sendMessage(null, message, resolve);
+			browser.runtime.sendMessage(message, done);
 	});
 }
 
@@ -221,24 +249,25 @@ Browser.gui._refreshPageAction = function(tabId, info) {
 }
 
 Browser.gui._refreshBrowserAction = function(tabId, info) {
+	const action = browser.action || browser.browserAction;		// Manifest V3 / V2 name of the same API
 	return new Promise(resolve => {
-		browser.browserAction.setTitle({
+		action.setTitle({
 			tabId: tabId,
 			title: info.title
 		});
-		browser.browserAction.setBadgeText({
+		action.setBadgeText({
 			tabId: tabId,
 			text: (info.apiCalls || "").toString()
 		});
-		browser.browserAction.setBadgeBackgroundColor({
+		action.setBadgeBackgroundColor({
 			tabId: tabId,
 			color: "#b12222"
 		});
-		browser.browserAction.setPopup({
+		action.setPopup({
 			tabId: tabId,
 			popup: "popup.html" + (tabId ? "?tabId="+tabId : "")	// pass tabId in the url
 		});
-		browser.browserAction.setIcon({
+		action.setIcon({
 			tabId: tabId,
 			path: Browser.gui._icons(info.private)
 		}, resolve);		// setIcon is the only browserAction.set* method with a callback
@@ -341,8 +370,16 @@ Browser.capabilities.iframeGeoFromOwnDomain = function() {
 }
 
 Browser.capabilities.permanentIcon = function() {
-	// we use browserAction in browsers where pageAction is not properly supported (eg Chrome)
-	return !!browser.runtime.getManifest().browser_action;
+	// we use a browser action (Manifest V2) / action (V3) in browsers where pageAction is not properly supported (eg Chrome)
+	return ManifestCaps.hasPermanentIcon(browser.runtime.getManifest());
+}
+
+Browser.capabilities.injectsViaManifest = function() {
+	return ManifestCaps.injectsViaManifest(browser.runtime.getManifest());
+}
+
+Browser.capabilities.hasPersistentBackground = function() {
+	return ManifestCaps.hasPersistentBackground(browser.runtime.getManifest());
 }
 
 Browser.capabilities.supportedIconSizes = function() {

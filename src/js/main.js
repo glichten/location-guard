@@ -10,10 +10,13 @@ const OsmReferer = require('./osm_referer');
 Browser.log('starting');
 
 // identify the extension's own map/geocoder requests to OpenStreetMap (see osm_referer.js)
-OsmReferer.install(browser.webRequest, browser.runtime.getURL(''));
+const refererReady = OsmReferer.install(browser);
 
-Util.events.addListener('browser.install', function() {
-	// show demo on first install
+Util.events.addListener('browser.install', async function() {
+	// show demo on first install. The demo shows a map right away, so wait until our
+	// OpenStreetMap requests are identified, or the first thing a new user sees could be
+	// OSM's "Access blocked" tiles.
+	await refererReady;
 	Browser.gui.showPage('demo.html');
 });
 

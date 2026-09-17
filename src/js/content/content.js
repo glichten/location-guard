@@ -46,6 +46,11 @@ if(Browser.inDemo) {	// DEMO: this is set in demo.js
 	// DEMO: we are inside the page, just run injectedCode()
 	injectedCode(PostRPC);
 
+} else if(Browser.capabilities.injectsViaManifest()) {
+	// Manifest V3 (Chromium): the manifest runs inject.js in the page's own world at
+	// document_start (a content script with world: "MAIN"), before any page script and
+	// regardless of the page's CSP. Nothing to inject here.
+
 } else if(document.documentElement.tagName.toLowerCase() == 'html') { // only for html
 	// We first try to inject the code in an inline <script>. This is the only way to force it to run immediately.
 	// We run the PostRPC code (which creates PostRPC) and pass the result to the injectedCode.

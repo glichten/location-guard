@@ -1,8 +1,10 @@
 // Base class for browser-specific functionality
 // Subclasses should implement the API defined here
 //
+// Chromium exposes the API as `chrome`; alias it as `browser`. globalThis rather than window:
+// the Manifest V3 background runs in a service worker, which has no window.
 if(typeof(browser) === 'undefined')
-	window.browser = chrome;
+	globalThis.browser = chrome;
 
 const Browser = {
 	debugging: null,				// null: auto set to true if running locally
@@ -173,6 +175,8 @@ const Browser = {
 		isDebugging: function() { return Browser.debugging },
 		popupAsTab: function() { return false },
 		permanentIcon: function() { return false },
+		injectsViaManifest: function() { return false },		// manifest injects the page-world script itself (see content.js)
+		hasPersistentBackground: function() { return true },	// background page lives as long as the browser (Manifest V2)
 		isAndroid: function() { return navigator.userAgent.toLowerCase().indexOf('android') > -1 },
 		isBrave: function() { return 'brave' in navigator }
 	},

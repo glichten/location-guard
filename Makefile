@@ -64,6 +64,9 @@ build/%: $(call find, src, *)
 
 	npx browserify ./src/js/content/inject.js                    > $@/js/content/inject.js
 
+	# Manifest V3 (Chromium) builds: the service worker entry that imports the two bundles
+	if [ "$*" != "firefox" ]; then cp src/js/background.js $@/js/background.js; fi
+
 	# copy module css/images
 	cp -r node_modules/jquery-mobile-babel-safe/css/images node_modules/jquery-mobile-babel-safe/css/jquery.mobile-1.4.5.min.css $@/css/
 	cp -r node_modules/leaflet/dist/images                 node_modules/leaflet/dist/leaflet.css                                 $@/css/
