@@ -51,8 +51,9 @@ version.
 variants for the Chromium browsers. Load them through "Load unpacked" on
 `chrome://extensions` (or `edge://extensions`) with developer mode on. The
 `make test-chrome` / `test-edge` targets start a browser with
-`--load-extension`, which branded Chrome and Edge ignore since version 137;
-point `CHROME=` (or `EDGE=` for `test-edge`) at a Chrome for Testing or Chromium binary instead.
+`--load-extension`. Branded Chrome ignores that flag since version 137, so
+point `CHROME=` at a Chrome for Testing or Chromium binary; Edge (tested with
+153) still honours it.
 `test/e2e/` has smoke tests that drive a real Firefox and a real Chrome
 against the live OpenStreetMap servers; see [test/e2e/README.md](test/e2e/README.md).
 

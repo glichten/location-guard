@@ -20,7 +20,9 @@ They need Python 3 (standard library only) and:
   which the test uses to open `moz-extension://` pages);
 - Chrome for Testing (or Chromium) plus a matching chromedriver, both from
   <https://googlechromelabs.github.io/chrome-for-testing/>. Branded Google
-  Chrome 137+ ignores `--load-extension`.
+  Chrome 137+ ignores `--load-extension`; branded Edge (153) still honours it
+  and works with `chrome_smoke.py` given `msedgedriver` and `msedge.exe`
+  (it uses `chrome-extension://` URLs like Chrome).
 
 ## Linux / macOS
 
